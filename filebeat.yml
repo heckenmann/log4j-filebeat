@@ -1,0 +1,24 @@
+filebeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: false
+
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - ${LOG_PATH}/*.json
+    fields_under_root: false
+    json.add_error_key: true
+
+processors:
+  - timestamp:
+      field: json.timeMillis
+      layouts:
+        - UNIX_MS
+        - UNIX
+      test:
+        - 1589117576765
+
+output.elasticsearch:
+  hosts: elasticsearch:9200

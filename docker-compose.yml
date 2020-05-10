@@ -1,0 +1,43 @@
+---
+version: "3.5"
+
+volumes:
+  elasticsearch-volume:
+    driver: local
+  log-volume:
+    driver: local
+
+services:
+  log-producer:
+    build: ./
+    environment:
+      - LOG_PATH=/var/log/mylogger
+    volumes:
+      - log-volume:/var/log/mylogger
+      - ./log4j2.properties:/opt/logger/log4j2.properties
+  elasticsearch:
+    image: container-registry.elastic.co/elasticsearch/elasticsearch-oss:7.6.2
+    hostname: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - elasticsearch-volume:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+  filebeat:
+    image: container-registry.elastic.co/beats/filebeat-oss:7.6.2
+    environment:
+      - setup.kibana.host=kibana:5601
+      - LOG_PATH=/var/log/mylogger
+    volumes:
+      - log-volume:/var/log/mylogger
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+  kibana:
+    image: container-registry.elastic.co/kibana/kibana-oss:7.6.2
+    ports:
+      - "5601:5601"
+    environment:
+      - "ELASTICSEARCH_HOSTS=http://elasticsearch:9200"
